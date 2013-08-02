@@ -24,6 +24,27 @@ void query_all_bson_object(mongo *conn) {
 	mongo_cursor_destroy(cursor);
 }
 
+void update_bson_object(mongo *conn) {
+	//query: {"name":"Joe"}
+	bson cond[1];
+	bson_init(cond);
+	bson_append_string(cond, "name", "Joe");
+	bson_finish(cond);
+
+	//op: {"$inc":{"age":2"}}
+	bson op[1];
+	int ret;
+	bson_init(op);
+	bson_append_start_object(op, "$inc");
+	bson_append_int(op, "age", 2);
+	bson_append_finish_object(op);
+	if ((ret = bson_finish(op)) != BSON_OK) {
+		printf("bson error: %d", ret);
+	} else {
+		mongo_update(conn, ns, cond, op, 0, NULL);
+	}
+}
+
 void delete_bson_object(mongo *conn) {
 	// query: {"name":"Joe"}
 	bson b[1];
@@ -46,9 +67,19 @@ int main() {
 		}
 	}
 	printf("connected\n");
+
+	//Create
 	insert_bson_object(conn);
 	printf("after insert\n");
+	//Query
 	query_all_bson_object(conn);
+
+	//Update: Joe's age add 2
+	update_bson_object(conn);	
+	printf("after update\n");
+	query_all_bson_object(conn);
+
+	//Delete
 	delete_bson_object(conn);
 	printf("after delete\n");
 	query_all_bson_object(conn);
