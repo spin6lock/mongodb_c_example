@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include "mongo.h"
 
+const char ns[] = "test.my_c_library";
+
 void insert_bson_object(mongo *conn) {
-	const char ns[] = "test.my_c_library";
 	bson b[1];
 	bson_init(b);
 	bson_append_string(b, "name", "Joe");
@@ -10,6 +11,26 @@ void insert_bson_object(mongo *conn) {
 	bson_finish(b);
 
 	int result = mongo_insert(conn, ns, b, NULL);
+	bson_destroy(b);
+}
+
+void query_all_bson_object(mongo *conn) {
+	mongo_cursor cursor[1];
+	mongo_cursor_init(cursor, conn, ns);
+
+	while (mongo_cursor_next(cursor) == MONGO_OK) {
+		bson_print(&cursor->current);
+	}
+	mongo_cursor_destroy(cursor);
+}
+
+void delete_bson_object(mongo *conn) {
+	// query: {"name":"Joe"}
+	bson b[1];
+	bson_init(b);
+	bson_append_string(b, "name", "Joe");
+	bson_finish(b);
+	mongo_remove(conn, ns, b, NULL);
 	bson_destroy(b);
 }
 
@@ -26,6 +47,11 @@ int main() {
 	}
 	printf("connected\n");
 	insert_bson_object(conn);
+	printf("after insert\n");
+	query_all_bson_object(conn);
+	delete_bson_object(conn);
+	printf("after delete\n");
+	query_all_bson_object(conn);
 	mongo_destroy(conn);
 	printf("disconnect\n");
 	return 0;
